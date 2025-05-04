@@ -34,13 +34,13 @@ public class MenuScene extends Scene {
             if (selectedOption < 0) {
                 selectedOption = options.length - 1;
             }
-            try { Thread.sleep(150); } catch (InterruptedException e) {}
+            input.consumeKey(KeyEvent.VK_UP);
         } else if (input.isKeyPressed(KeyEvent.VK_DOWN)) {
             selectedOption++;
             if (selectedOption >= options.length) {
                 selectedOption = 0;
             }
-            try { Thread.sleep(150); } catch (InterruptedException e) {}
+            input.consumeKey(KeyEvent.VK_DOWN);
         } else if (input.isKeyPressed(KeyEvent.VK_ENTER)) {
             switch (selectedOption) {
                 case 0:
@@ -53,7 +53,7 @@ public class MenuScene extends Scene {
                     System.exit(0);
                     break;
             }
-            try { Thread.sleep(150); } catch (InterruptedException e) {}
+            input.consumeKey(KeyEvent.VK_ENTER);
         }
     }
 

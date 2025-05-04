@@ -24,8 +24,10 @@ public class PauseScene extends Scene {
 
     @Override
     public void update() {
-        if (InputManager.getInstance().isKeyPressed(KeyEvent.VK_P)) {
+        InputManager input = InputManager.getInstance();
+        if (input.isKeyPressed(KeyEvent.VK_P)) {
             game.changeScene(new GameScene(game));
+            input.consumeKey(KeyEvent.VK_P);
             try { Thread.sleep(200); } catch (InterruptedException e) {}
         }
     }

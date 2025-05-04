@@ -6,14 +6,18 @@ import com.helwan.survivalgame.entities.Enemy;
 import com.helwan.survivalgame.entities.Item;
 import com.helwan.survivalgame.engine.AudioManager;
 import com.helwan.survivalgame.engine.InputManager;
-import com.helwan.survivalgame.story.StoryManager;
 import com.helwan.survivalgame.ui.DialogManager;
 import com.helwan.survivalgame.ui.HUD;
+import com.helwan.survivalgame.story.StoryManager;
 
 import java.awt.*;
 import java.awt.event.KeyEvent;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.imageio.ImageIO;
 
 public class GameScene extends Scene {
     private Player player;
@@ -33,6 +37,18 @@ public class GameScene extends Scene {
     private int[][] mapTiles;
     private int cameraX, cameraY;
 
+    private static BufferedImage floorTexture;
+    private static BufferedImage wallTexture;
+    private static BufferedImage doorTexture;
+    private static BufferedImage hazardTexture;
+    private static BufferedImage startTexture;
+    private static BufferedImage endTexture;
+
+
+    private enum Direction {
+        DOWN, LEFT, RIGHT, UP
+    }
+
     public GameScene(Game game) {
         super(game);
         player = new Player(TILE_SIZE * 2, TILE_SIZE * 2);
@@ -50,6 +66,25 @@ public class GameScene extends Scene {
 
         cameraX = 0;
         cameraY = 0;
+    }
+
+    static {
+        try {
+            floorTexture = ImageIO.read(GameScene.class.getResourceAsStream("/textures/floor.png"));
+            wallTexture = ImageIO.read(GameScene.class.getResourceAsStream("/textures/Outdoor decoration/Fences.png"));
+            doorTexture = ImageIO.read(GameScene.class.getResourceAsStream("/textures/Outdoor decoration/House.png"));
+            hazardTexture = ImageIO.read(GameScene.class.getResourceAsStream("/textures/Outdoor decoration/Chest.png"));
+            startTexture = ImageIO.read(GameScene.class.getResourceAsStream("/textures/Outdoor decoration/Oak_Tree_Small.png"));
+            endTexture = ImageIO.read(GameScene.class.getResourceAsStream("/textures/Outdoor decoration/Oak_Tree.png"));
+        } catch (IOException | IllegalArgumentException e) {
+            System.out.println("Failed to load one or more textures, using fallback colors.");
+            floorTexture = null;
+            wallTexture = null;
+            doorTexture = null;
+            hazardTexture = null;
+            startTexture = null;
+            endTexture = null;
+        }
     }
 
     private void generateMap() {
@@ -106,10 +141,12 @@ public class GameScene extends Scene {
     public void update() {
         InputManager input = InputManager.getInstance();
 
-        if (dialogVisible) {
+        if (dialogVisible) {            
             if (input.isKeyPressed(KeyEvent.VK_ENTER)) {
                 dialogManager.hideDialog();
                 dialogVisible = false;
+                storyManager.completeCurrentQuest(); // Mark quest as complete on dialog close
+                input.consumeKey(KeyEvent.VK_ENTER);
                 try { Thread.sleep(200); } catch (InterruptedException e) {}
             }
             return;
@@ -125,18 +162,21 @@ public class GameScene extends Scene {
 
         int newX = player.getX();
         int newY = player.getY();
-
         if (input.isKeyPressed(KeyEvent.VK_W) || input.isKeyPressed(KeyEvent.VK_UP)) {
             newY -= player.getSpeed();
+            player.currentDirection = 17;
         }
         if (input.isKeyPressed(KeyEvent.VK_S) || input.isKeyPressed(KeyEvent.VK_DOWN)) {
             newY += player.getSpeed();
+            player.currentDirection = 0;
         }
         if (input.isKeyPressed(KeyEvent.VK_A) || input.isKeyPressed(KeyEvent.VK_LEFT)) {
             newX -= player.getSpeed();
+            player.currentDirection = 22;
         }
         if (input.isKeyPressed(KeyEvent.VK_D) || input.isKeyPressed(KeyEvent.VK_RIGHT)) {
             newX += player.getSpeed();
+            player.currentDirection = 10;
         }
 
         int tileX = newX / TILE_SIZE;
@@ -194,28 +234,52 @@ public class GameScene extends Scene {
 
                 switch (tile) {
                     case 0: // floor
-                        g.setColor(Color.LIGHT_GRAY);
-                        g.fillRect(drawX, drawY, TILE_SIZE, TILE_SIZE);
+                        if (floorTexture != null) {
+                            g.drawImage(floorTexture, drawX, drawY, TILE_SIZE, TILE_SIZE, null);
+                        } else {
+                            g.setColor(Color.LIGHT_GRAY);
+                            g.fillRect(drawX, drawY, TILE_SIZE, TILE_SIZE);
+                        }
                         break;
                     case 1: // wall
-                        g.setColor(Color.DARK_GRAY);
-                        g.fillRect(drawX, drawY, TILE_SIZE, TILE_SIZE);
+                        if (wallTexture != null) {
+                            g.drawImage(wallTexture, drawX, drawY, TILE_SIZE, TILE_SIZE, null);
+                        } else {
+                            g.setColor(Color.DARK_GRAY);
+                            g.fillRect(drawX, drawY, TILE_SIZE, TILE_SIZE);
+                        }
                         break;
                     case 2: // door
-                        g.setColor(Color.ORANGE);
-                        g.fillRect(drawX, drawY, TILE_SIZE, TILE_SIZE);
+                        if (doorTexture != null) {
+                            g.drawImage(doorTexture, drawX, drawY, TILE_SIZE, TILE_SIZE, null);
+                        } else {
+                            g.setColor(Color.ORANGE);
+                            g.fillRect(drawX, drawY, TILE_SIZE, TILE_SIZE);
+                        }
                         break;
                     case 3: // hazard (red box)
-                        g.setColor(Color.RED);
-                        g.fillRect(drawX, drawY, TILE_SIZE, TILE_SIZE);
+                        if (hazardTexture != null) {
+                            g.drawImage(hazardTexture, drawX, drawY, TILE_SIZE, TILE_SIZE, null);
+                        } else {
+                            g.setColor(Color.RED);
+                            g.fillRect(drawX, drawY, TILE_SIZE, TILE_SIZE);
+                        }
                         break;
                     case 4: // start
-                        g.setColor(Color.GREEN);
-                        g.fillRect(drawX, drawY, TILE_SIZE, TILE_SIZE);
+                        if (startTexture != null) {
+                            g.drawImage(startTexture, drawX, drawY, TILE_SIZE, TILE_SIZE, null);
+                        } else {
+                            g.setColor(Color.GREEN);
+                            g.fillRect(drawX, drawY, TILE_SIZE, TILE_SIZE);
+                        }
                         break;
                     case 5: // end
-                        g.setColor(Color.BLUE);
-                        g.fillRect(drawX, drawY, TILE_SIZE, TILE_SIZE);
+                        if (endTexture != null) {
+                            g.drawImage(endTexture, drawX, drawY, TILE_SIZE, TILE_SIZE, null);
+                        } else {
+                            g.setColor(Color.BLUE);
+                            g.fillRect(drawX, drawY, TILE_SIZE, TILE_SIZE);
+                        }
                         break;
                 }
             }

@@ -24,6 +24,10 @@ public class InputManager implements KeyListener {
         return pressedKeys.contains(keyCode);
     }
 
+    public void consumeKey(int keyCode) {
+        pressedKeys.remove(keyCode);
+    }
+
     @Override
     public void keyPressed(KeyEvent e) {
         pressedKeys.add(e.getKeyCode());
